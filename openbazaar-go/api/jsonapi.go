@@ -2557,9 +2557,9 @@ func (i *jsonAPIHandler) GETContent(w http.ResponseWriter, r *http.Request) {
 
 func (i *jsonAPIHandler) GETFile(w http.ResponseWriter, r *http.Request) {
 	_, fileHash := path.Split(r.URL.Path)
-	outputPath := "/Users/chenyang/go/src/github.com/OpenBazaar/openbazaar-go/" + fileHash
+	outputPath := i.node.RepoPath + "/" + fileHash
 	_, err := ipfs.GetFile(i.node.Context, fileHash, outputPath)
-	fmt.Println("get file hash is ", fileHash)
+	fmt.Println("get file hash is ", fileHash, "write to ", outputPath)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
