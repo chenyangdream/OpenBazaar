@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func AddHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,6 +23,15 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 
 func CatHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Cat request")
+	fileHash := "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	dataText, err := ipfs.Cat(core.Node.Context, fileHash, time.Second*120)
+	if err != nil {
+		fmt.Println(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	fmt.Println("file hash ", fileHash, " filedata ", dataText)
+
 }
 
 
