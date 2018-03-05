@@ -30,7 +30,7 @@ func CatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("file hash ", fileHash, " filedata ", dataText)
+	fmt.Printf("file hash %s filedata %s", fileHash, dataText)
 
 }
 
