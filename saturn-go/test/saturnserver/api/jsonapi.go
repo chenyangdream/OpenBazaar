@@ -8,10 +8,8 @@ import (
 	"strings"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 	"github.com/Saturn/saturn-go"
 	"github.com/Saturn/saturn-go/cmd"
@@ -64,19 +62,43 @@ func (i *jsonAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (i *jsonAPIHandler) POSTAdd(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("ipfs add reqeust")
-	file, _ := exec.LookPath(os.Args[0])
-	path, _ := filepath.Abs(file)
-	dirPath := filepath.Dir(path)
-	testFilePath := dirPath + "/resource/helloworld.txt"
-	//fileHash, err := ipfscmd.AddFile(i.node.Context, testFilePath)
-	fileHash, err := ipfs.AddFile(testFilePath)
+	type filePath struct {
+		FilePath string `json:"filepath"`
+	}
+	decoder := json.NewDecoder(r.Body)
+
+	var fp filePath
+	err := decoder.Decode(&fp)
 	if err != nil {
-		ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		fmt.Println("add file ", path, " failed! error ", err)
+		ErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	fmt.Println("add file ", testFilePath, " hash ", fileHash)
+	_, err = os.Stat(fp.FilePath)
+	if err != nil {
+		ErrorResponse(w, http.StatusBadRequest, fmt.Sprint("file %s not exists", fp.FilePath))
+		return
+	}
+
+	hash, err := ipfs.AddFile(fp.FilePath)
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		fmt.Printf("add file %s failed err %s", fp.FilePath, err.Error())
+		return
+	}
+
+	type fileHash struct {
+		FileHash string `json:"filehash"`
+	}
+	var fh = fileHash {FileHash: hash}
+	b, err := json.Marshal(fh)
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	fmt.Printf("add file %s ok hash %s\n", fp.FilePath, hash)
+	http.ServeContent(w, r, hash, time.Now(), strings.NewReader(string(b)))
 }
 
 func (i *jsonAPIHandler) POSTPin(w http.ResponseWriter, r *http.Request) {
