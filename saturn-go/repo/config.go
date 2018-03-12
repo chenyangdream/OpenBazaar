@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/ipfs/go-ipfs/repo"
 	"github.com/ipfs/go-ipfs/repo/config"
-	"time"
 )
 
 var DefaultBootstrapAddresses = []string{
@@ -38,25 +37,9 @@ type APIConfig struct {
 	SSLKey        string
 }
 
-type TorConfig struct {
-	Password   string
-	TorControl string
-}
-
 type ResolverConfig struct {
 	Id  string `json:".id"`
 	Eth string `json:".eth"`
-}
-
-type WalletConfig struct {
-	Type             string
-	Binary           string
-	MaxFee           int
-	FeeAPI           string
-	HighFeeDefault   int
-	MediumFeeDefault int
-	LowFeeDefault    int
-	TrustedPeer      string
 }
 
 type DataSharing struct {
@@ -198,161 +181,6 @@ func GetAPIConfig(cfgBytes []byte) (*APIConfig, error) {
 	}
 
 	return apiConfig, nil
-}
-
-func GetWalletConfig(cfgBytes []byte) (*WalletConfig, error) {
-	var cfgIface interface{}
-	json.Unmarshal(cfgBytes, &cfgIface)
-	cfg, ok := cfgIface.(map[string]interface{})
-	if !ok {
-		return nil, MalformedConfigError
-	}
-
-	walletIface, ok := cfg["Wallet"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	wallet, ok := walletIface.(map[string]interface{})
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	feeAPI, ok := wallet["FeeAPI"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	feeAPIstr, ok := feeAPI.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	trustedPeer, ok := wallet["TrustedPeer"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	trustedPeerStr, ok := trustedPeer.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	low, ok := wallet["LowFeeDefault"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	lowFloat, ok := low.(float64)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	medium, ok := wallet["MediumFeeDefault"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	mediumFloat, ok := medium.(float64)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	high, ok := wallet["HighFeeDefault"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	highFloat, ok := high.(float64)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	maxFee, ok := wallet["MaxFee"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	maxFeeFloat, ok := maxFee.(float64)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	walletType, ok := wallet["Type"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	walletTypeStr, ok := walletType.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	binary, ok := wallet["Binary"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	binaryStr, ok := binary.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	wCfg := &WalletConfig{
-		Type:             walletTypeStr,
-		Binary:           binaryStr,
-		MaxFee:           int(maxFeeFloat),
-		FeeAPI:           feeAPIstr,
-		HighFeeDefault:   int(highFloat),
-		MediumFeeDefault: int(mediumFloat),
-		LowFeeDefault:    int(lowFloat),
-		TrustedPeer:      trustedPeerStr,
-	}
-	return wCfg, nil
-}
-
-func GetTorConfig(cfgBytes []byte) (*TorConfig, error) {
-	var cfgIface interface{}
-	json.Unmarshal(cfgBytes, &cfgIface)
-
-	cfg, ok := cfgIface.(map[string]interface{})
-	if !ok {
-		return nil, MalformedConfigError
-	}
-
-	tcIface, ok := cfg["Tor-config"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	tc, ok := tcIface.(map[string]interface{})
-
-	pw, ok := tc["Password"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	pwStr, ok := pw.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	controlUrl, ok := tc["TorControl"]
-	if !ok {
-		return nil, MalformedConfigError
-	}
-	controlUrlStr, ok := controlUrl.(string)
-	if !ok {
-		return nil, MalformedConfigError
-	}
-
-	return &TorConfig{TorControl: controlUrlStr, Password: pwStr}, nil
-}
-
-func GetRepublishInterval(cfgBytes []byte) (time.Duration, error) {
-	var cfgIface interface{}
-	json.Unmarshal(cfgBytes, &cfgIface)
-
-	cfg, ok := cfgIface.(map[string]interface{})
-	if !ok {
-		return time.Duration(0), MalformedConfigError
-	}
-
-	interval, ok := cfg["RepublishInterval"]
-	if !ok {
-		return time.Duration(0), MalformedConfigError
-	}
-	intervalStr, ok := interval.(string)
-	if !ok {
-		return time.Duration(0), MalformedConfigError
-	}
-	if intervalStr == "" {
-		return time.Duration(0), nil
-	}
-	d, err := time.ParseDuration(intervalStr)
-	if err != nil {
-		return d, err
-	}
-	return d, nil
 }
 
 func GetDataSharing(cfgBytes []byte) (*DataSharing, error) {

@@ -21,6 +21,11 @@ type RsaPublicKey struct {
 	k *rsa.PublicKey
 }
 
+//added by ChenYang 2018-03-08 16:56:00 just for saturn project
+func (rp *RsaPrivateKey) GetPrivateKey() *rsa.PrivateKey {
+	return rp.sk
+}
+
 func (pk *RsaPublicKey) Verify(data, sig []byte) (bool, error) {
 	hashed := sha256.Sum256(data)
 	err := rsa.VerifyPKCS1v15(pk.k, crypto.SHA256, hashed[:], sig)

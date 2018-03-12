@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/Saturn/saturn-go/ipfs"
+	"github.com/Saturn/saturn-go/cmd"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/namesys"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
@@ -15,7 +15,6 @@ import (
 	"github.com/op/go-logging"
 	"github.com/tyler-smith/go-bip39"
 	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -25,14 +24,8 @@ var log = logging.MustGetLogger("repo")
 var ErrRepoExists = errors.New("IPFS configuration file exists. Reinitializing would overwrite your keys. Use -f to force overwrite.")
 
 func DoInit(repoRoot string, nBitsForKeypair int, testnet bool, password string, mnemonic string, creationDate time.Time) error {
-
-	//ipfs的目录若存在就是初始化过了
+	//if ipfs repoRoot dir exists, repo has been initiallied
 	if fsrepo.IsInitialized(repoRoot) {
-		//若是6以下的版本则会执行MigrateUp过程。
-		err := MigrateUp(repoRoot, password, testnet)
-		if err != nil {
-			return err
-		}
 		return ErrRepoExists
 	}
 
@@ -52,20 +45,19 @@ func DoInit(repoRoot string, nBitsForKeypair int, testnet bool, password string,
 		}
 	}
 	seed := bip39.NewSeed(mnemonic, "Secret Passphrase")
-	fmt.Printf("Generating Ed25519 keypair...")
+	fmt.Printf("Generating RSA keypair...")
 	//IdentityKeyFromSeed可以选择key的生成算法
-
-	identityKey, err := ipfs.IdentityKeyFromSeed(seed, nBitsForKeypair)
+	identityKey, err := ipfscmd.IdentityKeyFromSeed(seed, nBitsForKeypair)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Done\n")
 
-	identity, err := ipfs.IdentityFromKey(identityKey)
+	identity, err := ipfscmd.IdentityFromKey(identityKey)
 	if err != nil {
 		return err
 	}
-
+	//此行赋值提前，为了将PeerId和PrivKey写入配置文件，为以后启动从配置文件读入PeerId和PrivKey做准备
 	conf.Identity = identity
 
 	log.Infof("Initializing Saturn node at %s\n", repoRoot)
@@ -131,7 +123,7 @@ func initializeIpnsKeyspace(repoRoot string, privKeyBytes []byte) error {
 		log.Error(err)
 		return err
 	}
-	identity, err := ipfs.IdentityFromKey(privKeyBytes)
+	identity, err := ipfscmd.IdentityFromKey(privKeyBytes)
 	if err != nil {
 		return err
 	}
@@ -211,15 +203,7 @@ func createMnemonic(newEntropy func(int) ([]byte, error), newMnemonic func([]byt
 func GetRepoPath() (string, error) {
 	// Set default base path and directory name
 	path := "~"
-	directoryName := "OpenBazaar2.0"
-
-	// Override OS-specific names
-	switch runtime.GOOS {
-	case "linux":
-		directoryName = ".openbazaar2.0"
-	case "darwin":
-		path = "~/Library/Application Support"
-	}
+	directoryName := ".saturn"
 
 	// Join the path and directory name, then expand the home path
 	fullPath, err := homedir.Expand(filepath.Join(path, directoryName))
