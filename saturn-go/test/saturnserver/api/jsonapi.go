@@ -8,12 +8,14 @@ import (
 	"strings"
 	"encoding/json"
 	"fmt"
-	"github.com/Saturn/saturn-go/cmd"
-	"github.com/Saturn/saturn-go/core"
 	"os/exec"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
+	"github.com/Saturn/saturn-go"
+	"github.com/Saturn/saturn-go/cmd"
+	"github.com/Saturn/saturn-go/core"
 )
 
 type jsonAPIHandler struct {
@@ -66,11 +68,42 @@ func (i *jsonAPIHandler) POSTAdd(w http.ResponseWriter, r *http.Request) {
 	path, _ := filepath.Abs(file)
 	dirPath := filepath.Dir(path)
 	testFilePath := dirPath + "/resource/helloworld.txt"
-	fileHash, err := ipfscmd.AddFile(i.node.Context, testFilePath)
+	//fileHash, err := ipfscmd.AddFile(i.node.Context, testFilePath)
+	fileHash, err := ipfs.AddFile(testFilePath)
 	if err != nil {
 		fmt.Println("add file ", path, " failed! error ", err)
 	}
+
 	fmt.Println("add file ", testFilePath, " hash ", fileHash)
+}
+
+func (i *jsonAPIHandler) POSTPin(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("pin file")
+	_, fileHash := path.Split(r.URL.Path)
+	if fileHash == "" {
+		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	}
+	err := ipfs.PinFile(fileHash)
+	if err != nil {
+		fmt.Println("pin file ", fileHash, " failed! error ", err)
+	}
+
+	fmt.Println("pin file hash ", fileHash, " ok!")
+}
+
+func (i *jsonAPIHandler) POSTUnpin(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("unpin file")
+	_, fileHash := path.Split(r.URL.Path)
+	if fileHash == "" {
+		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	}
+
+	err := ipfs.UnpinFile(fileHash)
+	if err != nil {
+		fmt.Println("unpin file ", fileHash, " failed! error ", err)
+	}
+
+	fmt.Println("unpin file hash ", fileHash, " ok!")
 }
 
 func (i *jsonAPIHandler) GETPeers(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +133,10 @@ func (i *jsonAPIHandler) GETPeerId(w http.ResponseWriter, r *http.Request) {
 
 func (i *jsonAPIHandler) GETFileContent(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Cat request")
-	fileHash := "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	_, fileHash := path.Split(r.URL.Path)
+	if fileHash == "" {
+		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	}
 	dataText, err := ipfscmd.Cat(i.node.Context, fileHash, time.Second*120)
 	if err != nil {
 		fmt.Println(http.StatusInternalServerError, err.Error())
