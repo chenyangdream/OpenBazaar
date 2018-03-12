@@ -71,7 +71,9 @@ func (i *jsonAPIHandler) POSTAdd(w http.ResponseWriter, r *http.Request) {
 	//fileHash, err := ipfscmd.AddFile(i.node.Context, testFilePath)
 	fileHash, err := ipfs.AddFile(testFilePath)
 	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		fmt.Println("add file ", path, " failed! error ", err)
+		return
 	}
 
 	fmt.Println("add file ", testFilePath, " hash ", fileHash)
@@ -85,7 +87,9 @@ func (i *jsonAPIHandler) POSTPin(w http.ResponseWriter, r *http.Request) {
 	}
 	err := ipfs.PinFile(fileHash)
 	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		fmt.Println("pin file ", fileHash, " failed! error ", err)
+		return
 	}
 
 	fmt.Println("pin file hash ", fileHash, " ok!")
@@ -100,7 +104,9 @@ func (i *jsonAPIHandler) POSTUnpin(w http.ResponseWriter, r *http.Request) {
 
 	err := ipfs.UnpinFile(fileHash)
 	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		fmt.Println("unpin file ", fileHash, " failed! error ", err)
+		return
 	}
 
 	fmt.Println("unpin file hash ", fileHash, " ok!")
@@ -122,7 +128,8 @@ func (i *jsonAPIHandler) GETPeers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) GETPeerId(w http.ResponseWriter, r *http.Request) {
-	peerid, err := i.node.GetPeerId()
+	peerInfo, err := ipfs.GetPeerInfo()
+	peerid := peerInfo.PeerId
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -139,12 +146,22 @@ func (i *jsonAPIHandler) GETFileContent(w http.ResponseWriter, r *http.Request) 
 	}
 	dataText, err := ipfscmd.Cat(i.node.Context, fileHash, time.Second*120)
 	if err != nil {
-		fmt.Println(http.StatusInternalServerError, err.Error())
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	fmt.Printf("file hash %s filedata %s", fileHash, dataText)
+}
 
+func (i *jsonAPIHandler) GETPinLs(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Pin ls request")
+	output, err := ipfscmd.PinLs(i.node.Context)
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	fmt.Printf("pin ls output %s", output)
 }
 
 func ErrorResponse(w http.ResponseWriter, errorCode int, reason string) {
