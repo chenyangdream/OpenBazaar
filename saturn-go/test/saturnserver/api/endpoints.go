@@ -28,6 +28,8 @@ func get(i *jsonAPIHandler, path string, w http.ResponseWriter, r *http.Request)
 		i.GETFileContent(w, r)
 	case strings.HasPrefix(path, "/saturn/pinls"):
 		i.GETPinLs(w, r)
+	case strings.HasPrefix(path, "/saturn/get"):
+		i.GETGet(w, r)
 	default:
 		ErrorResponse(w, http.StatusNotFound, "Not Found")
 	}

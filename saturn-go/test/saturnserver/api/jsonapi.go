@@ -63,7 +63,7 @@ func (i *jsonAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) POSTAdd(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("add file")
+	fmt.Println("ipfs add reqeust")
 	file, _ := exec.LookPath(os.Args[0])
 	path, _ := filepath.Abs(file)
 	dirPath := filepath.Dir(path)
@@ -80,7 +80,7 @@ func (i *jsonAPIHandler) POSTAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) POSTPin(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("pin file")
+	fmt.Println("ipfs pin request")
 	_, fileHash := path.Split(r.URL.Path)
 	if fileHash == "" {
 		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
@@ -96,7 +96,7 @@ func (i *jsonAPIHandler) POSTPin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) POSTUnpin(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("unpin file")
+	fmt.Println("ipfs unpin request")
 	_, fileHash := path.Split(r.URL.Path)
 	if fileHash == "" {
 		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
@@ -113,6 +113,7 @@ func (i *jsonAPIHandler) POSTUnpin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) GETPeers(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ipfs swarm peers request")
 	peers, err := ipfscmd.ConnectedPeers(i.node.Context)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -139,7 +140,7 @@ func (i *jsonAPIHandler) GETPeerId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *jsonAPIHandler) GETFileContent(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Cat request")
+	fmt.Println("ipfs cat request")
 	_, fileHash := path.Split(r.URL.Path)
 	if fileHash == "" {
 		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
@@ -154,7 +155,7 @@ func (i *jsonAPIHandler) GETFileContent(w http.ResponseWriter, r *http.Request) 
 }
 
 func (i *jsonAPIHandler) GETPinLs(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Pin ls request")
+	fmt.Println("ipfs pin ls request")
 	output, err := ipfscmd.PinLs(i.node.Context)
 	if err != nil {
 		ErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -162,6 +163,22 @@ func (i *jsonAPIHandler) GETPinLs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Printf("pin ls output %s", output)
+}
+
+func (i *jsonAPIHandler) GETGet(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ifps get request")
+	_, fileHash := path.Split(r.URL.Path)
+	if fileHash == "" {
+		fileHash = "zb2rhnWiqWEjwxAvdtx5V2j4cgG7BoFAmsGHNcKdYN7hb8Lqr"
+	}
+	outDir := i.node.RepoPath
+	err := ipfs.GetFile(fileHash, outDir, nil)
+	if err != nil {
+		ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	fmt.Printf("get %s to dir %s\n", fileHash, outDir)
 }
 
 func ErrorResponse(w http.ResponseWriter, errorCode int, reason string) {
